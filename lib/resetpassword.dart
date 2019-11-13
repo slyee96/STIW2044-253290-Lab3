@@ -2,24 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:toast/toast.dart';
 import 'package:http/http.dart' as http;
 import 'package:progress_dialog/progress_dialog.dart';
+import 'forgotpassword.dart';
 import 'loginscreen.dart';
-import 'resetpassword.dart';
-import 'package:flutter/services.dart';
-import 'dart:async';
 
-class ForgotPassword extends StatefulWidget {
+String urlReset = "http://myondb.com/myNelayanLY/php/resetPass.php";
+
+class ResetPasswordScreen extends StatefulWidget {
   final String email;
   @override
-  _ForgotPasswordState createState() => _ForgotPasswordState();
-  const ForgotPassword({Key key, this.email}) : super(key: key);
+  _ResetPasswordState createState() => _ResetPasswordState(email);
+  ResetPasswordScreen({Key key, this.email}) : super(key: key);
 }
 
-class _ForgotPasswordState extends State<ForgotPassword> {
-  final TextEditingController _emailcontroller = TextEditingController();
-  String _email = "";
-  String urlPass = "http://myondb.com/myNelayanLY/php/forgotpassword.php";
+class _ResetPasswordState extends State<ResetPasswordScreen> {
   GlobalKey<FormState> _key = new GlobalKey();
   bool _validate = false;
+  final TextEditingController _tempasscontroller = TextEditingController();
+  final TextEditingController _passcontroller = TextEditingController();
+  String _tempassword = "";
+  String _password = "";
+  String email;
+  _ResetPasswordState(this.email);
   @override
   void initState() {
     super.initState();
@@ -39,17 +42,35 @@ class _ForgotPasswordState extends State<ForgotPassword> {
           padding: EdgeInsets.all(16.0),
           child: Column(
             children: <Widget>[
-              Text("Enter your email address to reset password"),
+              Text("Enter your temporary password"),
               SizedBox(
                 height: 10.0,
               ),
               TextFormField(
                   autovalidate: _validate,
-                  controller: _emailcontroller,
-                  validator: validateEmail,
+                  controller: _tempasscontroller,
+                  validator: validatePassword,
+                  obscureText: true,
                   keyboardType: TextInputType.text,
                   decoration: InputDecoration(
-                    labelText: 'Email',
+                    labelText: 'Temporary Password',
+                    icon: Icon(Icons.person),
+                  )),
+              SizedBox(
+                height: 20.0,
+              ),
+              Text("Enter your new password"),
+              SizedBox(
+                height: 10.0,
+              ),
+              TextFormField(
+                  autovalidate: _validate,
+                  controller: _passcontroller,
+                  validator: validatePassword,
+                  obscureText: true,
+                  keyboardType: TextInputType.text,
+                  decoration: InputDecoration(
+                    labelText: 'Temporary Password',
                     icon: Icon(Icons.person),
                   )),
               SizedBox(
@@ -64,11 +85,11 @@ class _ForgotPasswordState extends State<ForgotPassword> {
                     borderRadius: BorderRadius.circular(20.0)),
                 minWidth: 200,
                 height: 50,
-                child: Text('Reset Password'),
+                child: Text('Submit'),
                 color: Colors.orange,
                 textColor: Colors.black,
                 elevation: 15,
-                onPressed: _onResetPassword,
+                onPressed: _onSubmit,
               ),
             ],
           ),
@@ -77,46 +98,46 @@ class _ForgotPasswordState extends State<ForgotPassword> {
     );
   }
 
-  String validateEmail(String value) {
+  Future<bool> _onBackPressAppBar() {
+    Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(
+          builder: (context) => ForgotPassword(),
+        ));
+    return Future.value(false);
+  }
+
+  String validatePassword(String value) {
     if (value.length == 0) {
-      return "Email is Required";
+      return "Password is Required";
+    } else if (value.length < 6) {
+      return "Password must at least 6 characters";
     } else {
       return null;
     }
   }
 
-  Future<bool> _onBackPressAppBar() {
-    Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(
-          builder: (context) => LoginPage(),
-        ));
-    return Future.value(false);
-  }
-
-  void _onResetPassword() {
-    print("Reset Password");
-    _email = _emailcontroller.text;
-    if (_isEmailValid(_email)) {
+  void _onSubmit() {
+    _tempassword = _tempasscontroller.text;
+    _password = _passcontroller.text;
+    email = widget.email;
+    if (_password.length > 5) {
       ProgressDialog pr = new ProgressDialog(context,
           type: ProgressDialogType.Normal, isDismissible: false);
-      pr.style(message: "Sending link to your email.");
+      pr.style(message: "Reset Password in progress");
       pr.show();
-      http.post(urlPass, body: {
-        "Email": _email,
+      http.post(urlReset, body: {
+        "email": email,
+        "tempassword": _tempassword,
+        "password": _password,
       }).then((res) {
         print(res.statusCode);
         Toast.show(res.body, context,
             duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
-        pr.dismiss();
-        if (res.body ==
-            "The temporary password had been sent, please check your email.") {
-          print('Checkkkkk...');
-          Navigator.pushReplacement(
-              context,
-              MaterialPageRoute(
-                  builder: (BuildContext context) =>
-                      ResetPasswordScreen(email: _email)));
+        if (res.body == "success") {
+          pr.dismiss();
+          Navigator.push(
+              context, MaterialPageRoute(builder: (context) => LoginPage()));
         } else {
           pr.dismiss();
         }
@@ -128,12 +149,8 @@ class _ForgotPasswordState extends State<ForgotPassword> {
       setState(() {
         _validate = true;
       });
-      Toast.show("Check your email format and must enter your email", context,
+      Toast.show("Please check your temporary password in your mail.", context,
           duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
     }
-  }
-
-  bool _isEmailValid(String email) {
-    return RegExp(r"^[a-zA-Z0-9.]+@[a-zA-Z0-9]+\.[a-zA-Z]+").hasMatch(email);
   }
 }

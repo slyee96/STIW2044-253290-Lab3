@@ -69,6 +69,8 @@ class RegisterWidget extends StatefulWidget {
 }
 
 class RegisterWidgetState extends State<RegisterWidget> {
+  GlobalKey<FormState> _key = new GlobalKey();
+  bool _validate = false;
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -88,27 +90,36 @@ class RegisterWidgetState extends State<RegisterWidget> {
                   )),
             )),
         Text('Click on image above to take profile picture'),
-        TextField(
+        TextFormField(
+            autovalidate: _validate,
             controller: _namecontroller,
+            validator: validateName,
             keyboardType: TextInputType.text,
             decoration: InputDecoration(
               labelText: 'Name',
               icon: Icon(Icons.person),
             )),
-        TextField(
+        TextFormField(
+            autovalidate: _validate,
             controller: _phcontroller,
+            validator: validatePhone,
             keyboardType: TextInputType.phone,
             decoration:
                 InputDecoration(labelText: 'Phone', icon: Icon(Icons.phone))),
-        TextField(
+        TextFormField(
+            autovalidate: _validate,
             controller: _emcontroller,
+            validator: validateEmail,
             keyboardType: TextInputType.emailAddress,
             decoration: InputDecoration(
               labelText: 'Email',
               icon: Icon(Icons.email),
             )),
-        TextField(
+        TextFormField(
+          autovalidate: _validate,
           controller: _passcontroller,
+          validator: validatePassword,
+          keyboardType: TextInputType.text,
           decoration:
               InputDecoration(labelText: 'Password', icon: Icon(Icons.lock)),
           obscureText: true,
@@ -163,6 +174,40 @@ class RegisterWidgetState extends State<RegisterWidget> {
     );
   }
 
+  String validateName(String value) {
+    if (value.length == 0) {
+      return "Name is Required";
+    }
+    return null;
+  }
+
+  String validatePhone(String value) {
+    if (value.length == 0) {
+      return "Phone Number is Required";
+    } else if (value.length < 9 || value.length > 11) {
+      return "Phone Number must 10-11 digits";
+    }
+    return null;
+  }
+
+  String validateEmail(String value) {
+    if (value.length == 0) {
+      return "Email is Required";
+    } else {
+      return null;
+    }
+  }
+
+  String validatePassword(String value) {
+    if (value.length == 0) {
+      return "Password is Required";
+    } else if (value.length < 6) {
+      return "Password must at least 6 characters";
+    } else {
+      return null;
+    }
+  }
+
   void _choose() async {
     _image = await ImagePicker.pickImage(source: ImageSource.camera);
     setState(() {});
@@ -190,7 +235,7 @@ class RegisterWidgetState extends State<RegisterWidget> {
     if ((_isEmailValid(_email)) &&
         (_password.length > 5) &&
         (_image != null) &&
-        (_phone.length > 5)) {
+        (_phone.length > 9 || _phone.length < 12)) {
       ProgressDialog pr = new ProgressDialog(context,
           type: ProgressDialogType.Normal, isDismissible: false);
       pr.style(message: "Registration in progress");
@@ -219,6 +264,9 @@ class RegisterWidgetState extends State<RegisterWidget> {
         print(err);
       });
     } else {
+      setState(() {
+        _validate = true;
+      });
       Toast.show("Check your registration information", context,
           duration: Toast.LENGTH_LONG, gravity: Toast.BOTTOM);
     }

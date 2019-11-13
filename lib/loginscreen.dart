@@ -31,6 +31,8 @@ class _LoginPageState extends State<LoginPage> {
   final TextEditingController _passcontroller = TextEditingController();
   String _password = "";
   bool _isChecked = false;
+  GlobalKey<FormState> _key = new GlobalKey();
+  bool _validate = false;
 
   @override
   void initState() {
@@ -59,8 +61,10 @@ class _LoginPageState extends State<LoginPage> {
                 SizedBox(
                   height: 15,
                 ),
-                TextField(
+                TextFormField(
+                    autovalidate: _validate,
                     controller: _emcontroller,
+                    validator: validateEmail,
                     keyboardType: TextInputType.emailAddress,
                     decoration: InputDecoration(
                         fillColor: Colors.white,
@@ -76,8 +80,10 @@ class _LoginPageState extends State<LoginPage> {
                 SizedBox(
                   height: 15,
                 ),
-                TextField(
+                TextFormField(
+                  autovalidate: _validate,
                   controller: _passcontroller,
+                  validator: validatePassword,
                   decoration: InputDecoration(
                       fillColor: Colors.white,
                       filled: true,
@@ -139,10 +145,28 @@ class _LoginPageState extends State<LoginPage> {
         ));
   }
 
+  String validateEmail(String value) {
+    if (value.length == 0) {
+      return "Email is Required";
+    } else {
+      return null;
+    }
+  }
+
+  String validatePassword(String value) {
+    if (value.length == 0) {
+      return "Password is Required";
+    } else if (value.length < 6) {
+      return "Password must at least 6 characters";
+    } else {
+      return null;
+    }
+  }
+
   void _onLogin() {
     _email = _emcontroller.text;
     _password = _passcontroller.text;
-    if (_isEmailValid(_email) && (_password.length > 4)) {
+    if (_isEmailValid(_email) && (_password.length > 5)) {
       ProgressDialog pr = new ProgressDialog(context,
           type: ProgressDialogType.Normal, isDismissible: false);
       pr.style(message: "Login in");
@@ -167,7 +191,11 @@ class _LoginPageState extends State<LoginPage> {
         pr.dismiss();
         print(err);
       });
-    } else {}
+    } else {
+      setState(() {
+        _validate = true;
+      });
+    }
   }
 
   void _onChange(bool value) {
